@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>HEXA CAPITAL — Terminal Analítico Copa 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#191917;--bg2:#1f1f1d;--bg3:#272725;--bg4:#2e2e2b;
+  --silk:#ede8d8;--silk2:#c4bba8;--silk3:#8a8070;
+  --bronze:#c4975a;--bronze2:#a37a40;--bronze3:rgba(196,151,90,.11);--bronze4:rgba(196,151,90,.05);
+  --bline:rgba(196,151,90,.13);--bline2:rgba(196,151,90,.26);
+  --g:rgba(90,153,112,.14);--gc:#7dd19a;
+  --r:rgba(154,90,90,.14);--rc:#c48080;
+  --amb:rgba(196,151,90,.13);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--silk);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.028'/%3E%3C/svg%3E");pointer-events:none;z-index:9999}
+/* SIDEBAR */
+.sb{position:fixed;left:0;top:0;bottom:0;width:56px;background:var(--bg2);border-right:1px solid var(--bline);display:flex;flex-direction:column;align-items:center;padding:20px 0 16px;z-index:200}
+.sb-logo{writing-mode:vertical-rl;transform:rotate(180deg);font-family:'Playfair Display',serif;font-size:9px;font-weight:700;letter-spacing:.28em;color:var(--bronze);text-transform:uppercase;margin-top:8px;margin-bottom:auto}
+.sb-line{width:1px;height:30px;background:linear-gradient(to bottom,transparent,var(--bronze2),transparent);margin:10px 0}
+.sb-nav{display:flex;flex-direction:column;gap:2px;align-items:center}
+.ni{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;color:var(--silk3);transition:all .2s;position:relative;border:1px solid transparent}
+.ni:hover,.ni.on{color:var(--bronze);background:var(--bronze3);border-color:var(--bline2)}
+.ni.on::before{content:'';position:absolute;left:-1px;top:50%;transform:translateY(-50%);width:2px;height:14px;background:var(--bronze);border-radius:0 2px 2px 0}
+.sb-ver{font-family:'DM Mono',monospace;font-size:7px;color:var(--silk3);letter-spacing:.1em;margin-top:12px;opacity:.35}
+/* MAIN */
+.wrap{margin-left:56px;min-height:100vh;display:flex;flex-direction:column}
+/* TOPBAR */
+.top{height:54px;border-bottom:1px solid var(--bline);display:flex;align-items:center;padding:0 26px;gap:18px;position:sticky;top:0;z-index:100;background:rgba(25,25,23,.97);backdrop-filter:blur(12px)}
+.top-brand{display:flex;align-items:center;gap:9px;font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--bronze);letter-spacing:.1em;text-transform:uppercase}
+.top-hex{width:24px;height:24px;background:var(--bronze3);border:1px solid var(--bronze2);border-radius:3px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.top-sep{width:1px;height:18px;background:var(--bline2)}
+.top-sub{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.18em;color:var(--silk3);text-transform:uppercase}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.live-badge{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:7.5px;letter-spacing:.14em;color:var(--bronze);text-transform:uppercase}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--bronze);animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+.top-time{font-family:'DM Mono',monospace;font-size:8.5px;color:var(--silk3);letter-spacing:.08em}
+/* TABS */
+.tab-bar{display:flex;align-items:center;border-bottom:1px solid var(--bline);padding:0 26px;background:var(--bg2)}
+.tab-btn{padding:13px 18px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--silk3);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .18s;white-space:nowrap}
+.tab-btn:hover{color:var(--silk2)}
+.tab-btn.on{color:var(--bronze);border-bottom-color:var(--bronze)}
+/* CONTENT */
+.cnt{padding:26px 26px 48px;flex:1}
+.view{display:none}.view.on{display:block}
+/* PAGE HEADER */
+.ph{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px;padding-bottom:16px;border-bottom:1px solid var(--bline)}
+.ph-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:500;color:var(--silk);line-height:1;margin-bottom:4px}
+.ph-sub{font-family:'DM Mono',monospace;font-size:7.5px;color:var(--silk3);letter-spacing:.16em;text-transform:uppercase}
+.ph-kpis{display:flex;gap:24px}
+.kpi{text-align:right}
+.kpi-v{font-family:'Playfair Display',serif;font-size:18px;color:var(--bronze);font-weight:500;line-height:1}
+.kpi-l{font-family:'DM Mono',monospace;font-size:6.5px;letter-spacing:.2em;color:var(--silk3);text-transform:uppercase;margin-top:2px}
+/* FILTERS */
+.filters{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.fl{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.2em;color:var(--silk3);text-transform:uppercase;margin-right:2px;white-space:nowrap}
+.fb{padding:4px 11px;border-radius:2px;border:1px solid var(--bline2);background:transparent;color:var(--silk3);font-family:'DM Mono',monospace;font-size:7.5px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .16s;white-space:nowrap}
+.fb:hover{border-color:var(--bronze2);color:var(--silk2)}
+.fb.on{border-color:var(--bronze);color:var(--bronze);background:var(--bronze3)}
+/* UPDATE BAR */
+.ubar{display:flex;align-items:center;gap:12px;padding:9px 14px;background:var(--bg3);border-radius:6px;border:1px solid var(--bline2);margin-bottom:14px;font-family:'DM Mono',monospace;font-size:7.5px;color:var(--silk3);letter-spacing:.08em}
+.ubar-dot{width:6px;height:6px;border-radius:50%;background:#5a9970;flex-shrink:0}
+.ubar-time{margin-left:auto;opacity:.6}
+.ubar-btn{padding:3px 10px;border-radius:2px;border:1px solid var(--bline2);background:transparent;color:var(--bronze);font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.ubar-btn:hover{border-color:var(--bronze);background:var(--bronze3)}
+/* TABLE */
+.tw{width:100%;overflow-x:auto}
+.gt{width:100%;border-collapse:collapse;min-width:1100px}
+.gt thead tr.h1 th{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.18em;text-transform:uppercase;color:var(--silk3);padding:7px 8px;text-align:center;white-space:nowrap;font-weight:400;border-bottom:1px solid var(--bline)}
+.gt thead tr.h2 th{font-family:'DM Mono',monospace;font-size:6px;letter-spacing:.1em;text-transform:uppercase;color:var(--silk3);padding:4px 6px;text-align:center;white-space:nowrap;font-weight:400;border-bottom:1px solid var(--bline2);opacity:.7}
+.gt thead tr.h1 th.lft{text-align:left}
+.bl{border-left:1px solid var(--bline2)!important}
+.casa-h{color:var(--bronze)!important;letter-spacing:.18em!important;font-size:7.5px!important;opacity:1!important}
+.sr td{padding:14px 8px 6px;font-family:'Playfair Display',serif;font-size:11.5px;color:var(--bronze);font-weight:500;letter-spacing:.04em;border-bottom:1px solid var(--bline2)!important;background:var(--bronze4)}
+.sr td .ss{font-family:'DM Mono',monospace;font-size:6.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--silk3);margin-left:8px;font-weight:400}
+.gt tbody tr{border-bottom:1px solid var(--bline);transition:background .12s}
+.gt tbody tr:hover{background:rgba(240,234,216,.018)}
+.gt td{padding:10px 7px;vertical-align:middle}
+.cn{font-family:'DM Mono',monospace;font-size:7.5px;color:var(--silk3);letter-spacing:.1em;opacity:.38;width:26px;text-align:center}
+.cd{width:80px}
+.cd-d{font-family:'DM Mono',monospace;font-size:8.5px;color:var(--silk2);letter-spacing:.02em;white-space:nowrap}
+.cd-t{font-family:'DM Mono',monospace;font-size:7px;color:var(--bronze2);margin-top:2px;letter-spacing:.05em}
+.cg{font-family:'DM Mono',monospace;font-size:7.5px;letter-spacing:.14em;color:var(--bronze2);text-transform:uppercase;width:52px;text-align:center}
+.cm{min-width:220px}
+.teams{display:flex;align-items:center;gap:6px}
+.tn{font-size:11.5px;font-weight:400;color:var(--silk);white-space:nowrap}
+.tn.h{text-align:right;min-width:96px}
+.tn.a{min-width:96px}
+.tn.br{color:#7dd19a}
+.vs-s{font-family:'DM Mono',monospace;font-size:7.5px;color:var(--silk3);opacity:.3;flex-shrink:0}
+.cv{font-family:'DM Mono',monospace;font-size:7.5px;color:var(--silk3);opacity:.45;white-space:nowrap;min-width:86px;letter-spacing:.02em}
+.op{display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:1px;font-family:'DM Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.03em;min-width:42px;border:1px solid transparent;cursor:default;white-space:nowrap}
+.op:hover{filter:brightness(1.15)}
+.oh{background:var(--g);color:var(--gc);border-color:rgba(90,153,112,.2)}
+.od{background:var(--amb);color:var(--bronze);border-color:rgba(196,151,90,.22)}
+.oa{background:var(--r);color:var(--rc);border-color:rgba(154,90,90,.2)}
+.ob{border-color:var(--bronze)!important;box-shadow:0 0 0 1px rgba(196,151,90,.2)}
+.oc{text-align:center;padding:9px 5px!important}
+.oc.bl{border-left:1px solid var(--bline2)!important;padding-left:10px!important}
+/* DESEMPENHO */
+.d-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.dh{background:var(--bg2);border:1px solid var(--bline2);border-radius:10px;padding:16px;position:relative}
+.dh-lbl{font-family:'DM Mono',monospace;font-size:7.5px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:6px;opacity:.7}
+.dh-val{font-family:'Playfair Display',serif;font-size:24px;font-weight:500;line-height:1;margin-bottom:2px}
+.dh-sub{font-family:'DM Mono',monospace;font-size:8px;opacity:.45;letter-spacing:.06em}
+.d-two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
+.d-card{background:var(--bg2);border:1px solid var(--bline2);border-radius:12px;padding:18px}
+.d-card-title{font-family:'DM Mono',monospace;font-size:7.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--silk3);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--bline)}
+.rk-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bline)}
+.rk-row:last-child{border-bottom:none}
+.rk-pos{font-family:'Playfair Display',serif;font-size:18px;font-weight:500;width:28px;flex-shrink:0;line-height:1}
+.rk-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:13px;font-weight:600;flex-shrink:0}
+.rk-info{flex:1;min-width:0}
+.rk-name{font-size:12.5px;font-weight:400;color:var(--silk);margin-bottom:2px;white-space:nowrap}
+.rk-detail{font-family:'DM Mono',monospace;font-size:8.5px;color:var(--silk3);letter-spacing:.03em}
+.rk-bw{width:90px;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;flex-shrink:0}
+.rk-b{height:100%;border-radius:2px}
+.rk-pct{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;min-width:34px;text-align:right;flex-shrink:0}
+/* player cards grid */
+.d-players{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:0}
+.pc{background:var(--bg2);border:1px solid var(--bline2);border-radius:12px;padding:18px;transition:border-color .2s}
+.pc:hover{border-color:var(--bronze)}
+.pc-top{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--bline)}
+.pc-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:15px;font-weight:600;flex-shrink:0}
+.pc-nm{font-family:'Playfair Display',serif;font-size:15px;font-weight:500;color:var(--silk);line-height:1;margin-bottom:2px}
+.pc-pct{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em}
+.pc-body{display:grid;grid-template-columns:130px 1fr;gap:16px;align-items:start}
+.pc-donut{position:relative;width:120px;height:120px}
+.pc-donut-lbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.pc-donut-pct{font-family:'Playfair Display',serif;font-size:22px;font-weight:500;line-height:1}
+.pc-donut-sub{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.1em;opacity:.45;margin-top:2px}
+.pc-right{display:flex;flex-direction:column;gap:0}
+.pc-nums{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.pc-num{background:var(--bg3);border-radius:5px;padding:7px;text-align:center}
+.pc-num-v{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
+.pc-num-l{font-family:'DM Mono',monospace;font-size:6.5px;opacity:.45;letter-spacing:.1em;margin-top:1px}
+.pc-phases{display:flex;flex-direction:column;gap:5px}
+.ph-row{display:flex;align-items:center;gap:6px}
+.ph-lbl{font-family:'DM Mono',monospace;font-size:6.5px;color:var(--silk3);width:60px;flex-shrink:0;letter-spacing:.04em}
+.ph-bw{flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.ph-b{height:100%;border-radius:2px;transition:width .6s ease}
+.ph-pct{font-family:'DM Mono',monospace;font-size:7px;color:var(--silk3);min-width:26px;text-align:right;flex-shrink:0}
+.tipo-section{margin-top:12px;padding-top:10px;border-top:1px solid var(--bline)}
+.tipo-lbl{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.16em;text-transform:uppercase;color:var(--silk3);margin-bottom:8px;opacity:.7}
+.tipo-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.tipo-nm{font-family:'DM Mono',monospace;font-size:7px;color:var(--silk3);width:72px;flex-shrink:0;letter-spacing:.04em}
+.tipo-bw{flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.tipo-b{height:100%;border-radius:2px}
+.tipo-pct{font-family:'DM Mono',monospace;font-size:7.5px;font-weight:500;min-width:28px;text-align:right;flex-shrink:0}
+.sec-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--silk3);margin:24px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--bline)}
+/* TEAM */
+.team-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.mc{background:var(--bg2);border:1px solid var(--bline2);border-radius:10px;padding:20px;transition:border-color .2s;position:relative;overflow:hidden}
+.mc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.mc:hover{border-color:var(--bronze);background:var(--bg3)}
+.mc-role{font-family:'DM Mono',monospace;font-size:7.5px;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px;opacity:.85}
+.mc-name{font-family:'Playfair Display',serif;font-size:18px;font-weight:500;color:var(--silk);line-height:1.1;margin-bottom:6px}
+.mc-dept{font-family:'DM Mono',monospace;font-size:9px;color:var(--silk3);letter-spacing:.08em}
+.mc-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:16px;font-weight:600;margin-bottom:14px}
+/* FOOTER */
+.foot{margin-top:28px;padding-top:12px;border-top:1px solid var(--bline);display:flex;align-items:center;justify-content:space-between;gap:14px}
+.foot-note{font-family:'DM Mono',monospace;font-size:6.5px;color:var(--silk3);letter-spacing:.08em;opacity:.45;line-height:1.7}
+.foot-brand{font-family:'Playfair Display',serif;font-size:9.5px;color:var(--bronze2);letter-spacing:.15em;text-transform:uppercase;white-space:nowrap}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bline2);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--bronze2)}
+
+/* ══════════════════════════════════
+   MOBILE RESPONSIVE
+   ══════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* Sidebar vira bottom nav */
+  .sb {
+    position: fixed;
+    left: 0; right: 0;
+    top: auto; bottom: 0;
+    width: 100%;
+    height: 56px;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 12px;
+    border-right: none;
+    border-top: 1px solid var(--bline);
+    z-index: 300;
+  }
+  .sb-logo { display: none; }
+  .sb-line { display: none; }
+  .sb-ver  { display: none; }
+  .sb-nav  { flex-direction: row; gap: 0; width: 100%; justify-content: space-around; }
+  .ni { width: 48px; height: 44px; }
+
+  /* Main sem margin-left, com padding-bottom para bottom nav */
+  .wrap { margin-left: 0; padding-bottom: 56px; }
+
+  /* Topbar compacta */
+  .top { padding: 0 14px; gap: 10px; height: 48px; }
+  .top-brand { font-size: 14px; }
+  .top-sub { display: none; }
+  .top-sep { display: none; }
+  .live-badge { font-size: 7px; gap: 4px; }
+  .live-dot { width: 4px; height: 4px; }
+  .top-time { display: none; }
+
+  /* Tab bar scroll horizontal */
+  .tab-bar { overflow-x: auto; white-space: nowrap; padding: 0 14px; scrollbar-width: none; }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 11px 14px; font-size: 7.5px; }
+
+  /* Content padding */
+  .cnt { padding: 16px 14px 32px; }
+
+  /* Page header empilhado */
+  .ph { flex-direction: column; align-items: flex-start; gap: 14px; margin-bottom: 16px; padding-bottom: 14px; }
+  .ph-title { font-size: 18px; }
+  .ph-sub { font-size: 7px; }
+  .ph-kpis { gap: 16px; align-self: stretch; justify-content: space-between; }
+  .kpi-v { font-size: 15px; }
+  .kpi-l { font-size: 6px; }
+
+  /* Filters wrap */
+  .filters { gap: 4px; }
+  .fl { font-size: 6.5px; }
+  .fb { padding: 4px 9px; font-size: 7px; }
+
+  /* Update bar */
+  .ubar { padding: 7px 10px; font-size: 7px; flex-wrap: wrap; gap: 8px; }
+
+  /* TABLE — scroll horizontal com indicador */
+  .tw { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tw::after {
+    content: '← scroll →';
+    display: block;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 7px;
+    color: var(--silk3);
+    opacity: .5;
+    padding: 6px 0 2px;
+    letter-spacing: .1em;
+  }
+  .gt { min-width: 900px; }
+  .gt thead tr.h1 th { padding: 6px 6px; font-size: 6.5px; }
+  .gt thead tr.h2 th { padding: 3px 5px; font-size: 6px; }
+  .gt td { padding: 8px 6px; }
+  .tn { font-size: 10.5px; }
+  .tn.h, .tn.a { min-width: 80px; }
+  .op { font-size: 9.5px; min-width: 36px; padding: 2px 6px; }
+
+  /* DESEMPENHO hero */
+  .d-hero { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .dh { padding: 12px; }
+  .dh-val { font-size: 18px; }
+  .dh-lbl { font-size: 6.5px; }
+  .dh-sub { font-size: 7px; }
+
+  /* Ranking + tipo: empilhados */
+  .d-two { grid-template-columns: 1fr; gap: 12px; }
+  .d-card { padding: 14px; }
+  .d-card-title { font-size: 7px; }
+  .rk-row { gap: 7px; padding: 8px 0; }
+  .rk-pos { font-size: 15px; width: 24px; }
+  .rk-av { width: 28px; height: 28px; font-size: 11px; }
+  .rk-name { font-size: 11px; }
+  .rk-detail { font-size: 7.5px; }
+  .rk-bw { width: 60px; }
+  .rk-pct { font-size: 9px; }
+
+  /* Player cards: 1 coluna */
+  .d-players { grid-template-columns: 1fr; gap: 12px; }
+  .pc { padding: 14px; }
+  .pc-top { gap: 8px; margin-bottom: 12px; padding-bottom: 10px; }
+  .pc-av { width: 32px; height: 32px; font-size: 13px; }
+  .pc-nm { font-size: 14px; }
+  .pc-pct { font-size: 8.5px; }
+
+  /* Player card body: donut menor, side by side */
+  .pc-body { grid-template-columns: 100px 1fr; gap: 12px; }
+  .pc-donut { width: 100px; height: 100px; }
+  .pc-donut-pct { font-size: 18px; }
+  .pc-donut-sub { font-size: 6.5px; }
+  .pc-nums { gap: 4px; margin-bottom: 8px; }
+  .pc-num { padding: 5px 6px; }
+  .pc-num-v { font-size: 12px; }
+  .pc-num-l { font-size: 6px; }
+  .ph-lbl { font-size: 6px; width: 52px; }
+  .ph-pct { font-size: 6.5px; }
+  .tipo-nm { font-size: 6.5px; width: 62px; }
+  .tipo-pct { font-size: 7px; }
+  .tipo-lbl { font-size: 6.5px; }
+  .sec-lbl { font-size: 7px; margin: 18px 0 12px; }
+
+  /* Team grid: 2 colunas */
+  .team-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mc { padding: 14px; }
+  .mc-av { width: 32px; height: 32px; font-size: 13px; margin-bottom: 10px; }
+  .mc-role { font-size: 6.5px; }
+  .mc-name { font-size: 15px; }
+  .mc-dept { font-size: 8px; }
+
+  /* Footer */
+  .foot { flex-direction: column; gap: 8px; align-items: flex-start; }
+  .foot-note { font-size: 6px; }
+  .foot-brand { font-size: 9px; }
+}
+
+@media (max-width: 400px) {
+  .ph-kpis { gap: 10px; }
+  .d-hero { grid-template-columns: 1fr 1fr; }
+  .team-grid { grid-template-columns: 1fr; }
+  .pc-body { grid-template-columns: 90px 1fr; gap: 10px; }
+  .pc-donut { width: 90px; height: 90px; }
+}
+
+</style>
+</head>
+<body>
+
+<aside class="sb">
+  <div class="sb-logo">Hexa Capital</div>
+  <div class="sb-line"></div>
+  <nav class="sb-nav">
+    <div class="ni on" id="sb-jogos" onclick="showTab('jogos',this)" title="Jogos">
+      <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><rect x="1" y="2.5" width="13" height="1.7" rx=".85" fill="currentColor" opacity=".75"/><rect x="1" y="6.5" width="13" height="1.7" rx=".85" fill="currentColor" opacity=".5"/><rect x="1" y="10.5" width="13" height="1.7" rx=".85" fill="currentColor" opacity=".28"/></svg>
+    </div>
+    <div class="ni" id="sb-desemp" onclick="showTab('desemp',this)" title="Desempenho 2022">
+      <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><path d="M2 11L5 7.5L8 9.5L11 4.5L13.5 6.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="ni" id="sb-team" onclick="showTab('team',this)" title="Quadro Societário">
+      <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="5.5" cy="5" r="2.2" stroke="currentColor" stroke-width="1.1"/><circle cx="10.5" cy="5" r="2.2" stroke="currentColor" stroke-width="1.1"/><path d="M1 13c0-2.2 2-4 4.5-4s4.5 1.8 4.5 4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M10.5 9c1.5 0 3 .9 3.5 2.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+    </div>
+  </nav>
+  <div class="sb-ver">v4.0</div>
+</aside>
+
+<div class="wrap">
+  <header class="top">
+    <div class="top-brand">
+      <div class="top-hex">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1.2L12.8 4.5V9.5L7 12.8L1.2 9.5V4.5Z" stroke="#c4975a" stroke-width="1.15"/></svg>
+      </div>
+      HEXA
+    </div>
+    <div class="top-sep"></div>
+    <div class="top-sub">Terminal Analítico · Copa do Mundo 2026</div>
+    <div class="top-right">
+      <div class="live-badge"><div class="live-dot"></div>Monitorando odds</div>
+      <div class="top-sep"></div>
+      <div class="top-time" id="clk">—</div>
+    </div>
+  </header>
+
+  <div class="tab-bar">
+    <button class="tab-btn on"  id="tab-jogos"  onclick="showTab('jogos',this)">Mercado de Jogos</button>
+    <button class="tab-btn"     id="tab-desemp" onclick="showTab('desemp',this)">Desempenho 2022</button>
+    <button class="tab-btn"     id="tab-team"   onclick="showTab('team',this)">Quadro Societário</button>
+  </div>
+
+  <main class="cnt">
+
+  <!-- ── JOGOS ── -->
+  <div class="view on" id="view-jogos">
+    <div class="ph">
+      <div>
+        <div class="ph-title">Mercado de Jogos</div>
+        <div class="ph-sub">Copa do Mundo FIFA 2026 · EUA / México / Canadá · 104 Partidas · 11 Jun — 19 Jul</div>
+      </div>
+      <div class="ph-kpis">
+        <div class="kpi"><div class="kpi-v">104</div><div class="kpi-l">Partidas</div></div>
+        <div class="kpi"><div class="kpi-v">48</div><div class="kpi-l">Seleções</div></div>
+        <div class="kpi"><div class="kpi-v">3</div><div class="kpi-l">Casas</div></div>
+        <div class="kpi"><div class="kpi-v">11 Jun</div><div class="kpi-l">Abertura</div></div>
+      </div>
+    </div>
+    <div class="ubar">
+      <div class="live-dot ubar-dot" id="sync-dot"></div>
+      <span id="sync-msg">Odds de referência carregadas</span>
+      <span class="ubar-time" id="sync-time">—</span>
+      <button class="ubar-btn" onclick="refreshOdds()">↻ Atualizar</button>
+    </div>
+    <div class="filters">
+      <span class="fl">Fase —</span>
+      <button class="fb on" onclick="fp('all',this)">Todos</button>
+      <button class="fb" onclick="fp('r1',this)">1ª Rodada</button>
+      <button class="fb" onclick="fp('r2',this)">2ª Rodada</button>
+      <button class="fb" onclick="fp('r3',this)">3ª Rodada</button>
+      <button class="fb" onclick="fp('a',this)">32-avos</button>
+      <button class="fb" onclick="fp('o',this)">Oitavas</button>
+      <button class="fb" onclick="fp('q',this)">Quartas</button>
+      <button class="fb" onclick="fp('s',this)">Semis</button>
+      <button class="fb" onclick="fp('f',this)">Final</button>
+      <span class="fl" style="margin-left:10px">Grupo —</span>
+      <button class="fb" onclick="fg('A',this)">A</button><button class="fb" onclick="fg('B',this)">B</button>
+      <button class="fb" onclick="fg('C',this)">C</button><button class="fb" onclick="fg('D',this)">D</button>
+      <button class="fb" onclick="fg('E',this)">E</button><button class="fb" onclick="fg('F',this)">F</button>
+      <button class="fb" onclick="fg('G',this)">G</button><button class="fb" onclick="fg('H',this)">H</button>
+      <button class="fb" onclick="fg('I',this)">I</button><button class="fb" onclick="fg('J',this)">J</button>
+      <button class="fb" onclick="fg('K',this)">K</button><button class="fb" onclick="fg('L',this)">L</button>
+    </div>
+    <div class="tw">
+      <table class="gt">
+        <thead>
+          <tr class="h1">
+            <th class="lft" style="width:26px">#</th>
+            <th class="lft" style="width:80px">Data</th>
+            <th class="lft" style="width:52px">Horário</th>
+            <th style="width:52px">Grp</th>
+            <th class="lft">Confronto</th>
+            <th class="lft" style="width:86px">Sede</th>
+            <th colspan="3" class="bl casa-h">BETANO</th>
+            <th colspan="3" class="bl casa-h">BET365</th>
+            <th colspan="3" class="bl casa-h">SPORTINGBET</th>
+          </tr>
+          <tr class="h2">
+            <th></th><th></th><th></th><th></th><th></th>
+            <th class="bl" style="color:var(--gc);opacity:1;padding-left:10px">Vitória A</th>
+            <th style="color:var(--bronze);opacity:1">Empate</th>
+            <th style="color:var(--rc);opacity:.9">Vitória B</th>
+            <th class="bl" style="color:var(--gc);opacity:1;padding-left:10px">Vitória A</th>
+            <th style="color:var(--bronze);opacity:1">Empate</th>
+            <th style="color:var(--rc);opacity:.9">Vitória B</th>
+            <th class="bl" style="color:var(--gc);opacity:1;padding-left:10px">Vitória A</th>
+            <th style="color:var(--bronze);opacity:1">Empate</th>
+            <th style="color:var(--rc);opacity:.9">Vitória B</th>
+          </tr>
+        </thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+    <div class="foot">
+      <div class="foot-note">ODDS DE REFERÊNCIA — BETANO / BET365 / SPORTINGBET (MAI 2026) · CONFIRME NAS PLATAFORMAS ANTES DE APOSTAR · +18</div>
+      <div class="foot-brand">Hexa Capital © 2026</div>
+    </div>
+  </div>
+
+  <!-- ── DESEMPENHO ── -->
+  <div class="view" id="view-desemp">
+    <div class="ph">
+      <div>
+        <div class="ph-title">Desempenho — Copa 2022</div>
+        <div class="ph-sub">Qatar 2022 · 64 Jogos · Análise Individual · Palpites por Fase e Tipo de Jogo</div>
+      </div>
+      <div class="ph-kpis">
+        <div class="kpi"><div class="kpi-v">64</div><div class="kpi-l">Jogos</div></div>
+        <div class="kpi"><div class="kpi-v" id="kpi-best">—</div><div class="kpi-l">Melhor</div></div>
+        <div class="kpi"><div class="kpi-v" id="kpi-avg">—</div><div class="kpi-l">Média</div></div>
+      </div>
+    </div>
+    <!-- hero -->
+    <div class="d-hero" id="dHero"></div>
+    <!-- ranking + tipo -->
+    <div class="d-two">
+      <div class="d-card">
+        <div class="d-card-title">🏆 Ranking Geral — Acertos Copa 2022</div>
+        <div id="rankList"></div>
+      </div>
+      <div class="d-card">
+        <div class="d-card-title">📊 Acertos por Tipo de Jogo — Todos os Jogadores</div>
+        <div style="position:relative;height:220px"><canvas id="tipoChart"></canvas></div>
+      </div>
+    </div>
+    <!-- player cards -->
+    <div class="sec-lbl">Análise Individual por Jogador</div>
+    <div class="d-players" id="dPlayers"></div>
+    <div class="foot" style="margin-top:32px">
+      <div class="foot-note">FONTE: HEXA CAPITAL · EXCEL DESEMPENHO COPA 2022 · QATAR · 64 JOGOS</div>
+      <div class="foot-brand">Hexa Capital © 2026</div>
+    </div>
+  </div>
+
+  <!-- ── SOCIEDADE ── -->
+  <div class="view" id="view-team">
+    <div class="ph">
+      <div><div class="ph-title">Quadro Societário</div><div class="ph-sub">Hexa Capital · Estrutura Organizacional · 2026</div></div>
+    </div>
+    <div class="team-grid" id="teamGrid"></div>
+    <div class="foot" style="margin-top:36px">
+      <div class="foot-note">HEXA CAPITAL · ESTRUTURA ORGANIZACIONAL INTERNA · CONFIDENCIAL</div>
+      <div class="foot-brand">Hexa Capital © 2026</div>
+    </div>
+  </div>
+
+  </main>
+</div>
+
+<script>
+const ODDS_DB = {
+  "México|África do Sul": {"bt": {"o1": 1.52, "oX": 4.08, "o2": 6.32}, "b3": {"o1": 1.53, "oX": 4.08, "o2": 6.44}, "sb": {"o1": 1.54, "oX": 3.99, "o2": 6.48}},
+  "Coreia do Sul|Rep. Tcheca": {"bt": {"o1": 2.42, "oX": 3.21, "o2": 2.96}, "b3": {"o1": 2.46, "oX": 3.2, "o2": 2.94}, "sb": {"o1": 2.44, "oX": 3.26, "o2": 2.93}},
+  "Canadá|Bósnia": {"bt": {"o1": 1.98, "oX": 3.23, "o2": 3.52}, "b3": {"o1": 1.95, "oX": 3.3, "o2": 3.51}, "sb": {"o1": 2.04, "oX": 3.28, "o2": 3.66}},
+  "Estados Unidos|Paraguai": {"bt": {"o1": 1.8, "oX": 3.36, "o2": 4.85}, "b3": {"o1": 1.78, "oX": 3.42, "o2": 4.73}, "sb": {"o1": 1.72, "oX": 3.41, "o2": 4.86}},
+  "Austrália|Turquia": {"bt": {"o1": 2.59, "oX": 3.16, "o2": 2.67}, "b3": {"o1": 2.58, "oX": 3.1, "o2": 2.61}, "sb": {"o1": 2.57, "oX": 3.19, "o2": 2.65}},
+  "Catar|Suíça": {"bt": {"o1": 4.49, "oX": 3.4, "o2": 1.68}, "b3": {"o1": 4.44, "oX": 3.44, "o2": 1.78}, "sb": {"o1": 4.46, "oX": 3.39, "o2": 1.76}},
+  "Brasil|Marrocos": {"bt": {"o1": 1.66, "oX": 3.47, "o2": 5.52}, "b3": {"o1": 1.56, "oX": 3.47, "o2": 5.43}, "sb": {"o1": 1.66, "oX": 3.51, "o2": 5.42}},
+  "Haiti|Escócia": {"bt": {"o1": 5.45, "oX": 3.59, "o2": 1.69}, "b3": {"o1": 5.44, "oX": 3.65, "o2": 1.63}, "sb": {"o1": 5.44, "oX": 3.66, "o2": 1.57}},
+  "Alemanha|Curaçao": {"bt": {"o1": 1.18, "oX": 7.0, "o2": 14.04}, "b3": {"o1": 1.21, "oX": 7.06, "o2": 13.97}, "sb": {"o1": 1.22, "oX": 6.97, "o2": 13.94}},
+  "Holanda|Japão": {"bt": {"o1": 1.7, "oX": 3.64, "o2": 4.76}, "b3": {"o1": 1.78, "oX": 3.66, "o2": 4.74}, "sb": {"o1": 1.7, "oX": 3.56, "o2": 4.75}},
+  "Costa do Marfim|Equador": {"bt": {"o1": 2.31, "oX": 3.28, "o2": 2.83}, "b3": {"o1": 2.32, "oX": 3.29, "o2": 2.98}, "sb": {"o1": 2.26, "oX": 3.19, "o2": 2.85}},
+  "Suécia|Tunísia": {"bt": {"o1": 1.87, "oX": 3.31, "o2": 4.25}, "b3": {"o1": 1.84, "oX": 3.27, "o2": 4.25}, "sb": {"o1": 1.84, "oX": 3.35, "o2": 4.16}},
+  "Espanha|Cabo Verde": {"bt": {"o1": 1.18, "oX": 8.01, "o2": 18.06}, "b3": {"o1": 1.13, "oX": 8.05, "o2": 18.04}, "sb": {"o1": 1.18, "oX": 8.03, "o2": 18.06}},
+  "Bélgica|Egito": {"bt": {"o1": 1.52, "oX": 3.78, "o2": 5.8}, "b3": {"o1": 1.62, "oX": 3.83, "o2": 5.89}, "sb": {"o1": 1.6, "oX": 3.82, "o2": 5.88}},
+  "Arábia Saudita|Uruguai": {"bt": {"o1": 4.82, "oX": 3.45, "o2": 1.79}, "b3": {"o1": 4.78, "oX": 3.37, "o2": 1.67}, "sb": {"o1": 4.78, "oX": 3.4, "o2": 1.72}},
+  "Irã|Nova Zelândia": {"bt": {"o1": 1.93, "oX": 3.16, "o2": 3.83}, "b3": {"o1": 2.0, "oX": 3.26, "o2": 3.74}, "sb": {"o1": 2.0, "oX": 3.25, "o2": 3.74}},
+  "França|Senegal": {"bt": {"o1": 1.42, "oX": 4.01, "o2": 7.04}, "b3": {"o1": 1.44, "oX": 4.06, "o2": 6.93}, "sb": {"o1": 1.44, "oX": 3.98, "o2": 6.96}},
+  "Iraque|Noruega": {"bt": {"o1": 5.47, "oX": 3.58, "o2": 1.67}, "b3": {"o1": 5.5, "oX": 3.67, "o2": 1.53}, "sb": {"o1": 5.47, "oX": 3.64, "o2": 1.66}},
+  "Argentina|Argélia": {"bt": {"o1": 1.39, "oX": 4.21, "o2": 7.99}, "b3": {"o1": 1.33, "oX": 4.13, "o2": 8.0}, "sb": {"o1": 1.46, "oX": 4.17, "o2": 7.98}},
+  "Áustria|Jordânia": {"bt": {"o1": 1.54, "oX": 3.86, "o2": 5.5}, "b3": {"o1": 1.56, "oX": 3.75, "o2": 5.54}, "sb": {"o1": 1.56, "oX": 3.78, "o2": 5.51}},
+  "Portugal|RD Congo": {"bt": {"o1": 1.17, "oX": 6.47, "o2": 14.02}, "b3": {"o1": 1.24, "oX": 6.43, "o2": 14.0}, "sb": {"o1": 1.17, "oX": 6.47, "o2": 13.93}},
+  "Inglaterra|Croácia": {"bt": {"o1": 1.58, "oX": 3.56, "o2": 5.47}, "b3": {"o1": 1.58, "oX": 3.58, "o2": 5.59}, "sb": {"o1": 1.6, "oX": 3.54, "o2": 5.46}},
+  "Gana|Panamá": {"bt": {"o1": 2.07, "oX": 3.23, "o2": 3.47}, "b3": {"o1": 2.06, "oX": 3.25, "o2": 3.39}, "sb": {"o1": 2.14, "oX": 3.24, "o2": 3.42}},
+  "Uzbequistão|Colômbia": {"bt": {"o1": 4.78, "oX": 3.34, "o2": 1.8}, "b3": {"o1": 4.76, "oX": 3.45, "o2": 1.75}, "sb": {"o1": 4.82, "oX": 3.46, "o2": 1.71}},
+  "Rep. Tcheca|África do Sul": {"bt": {"o1": 1.79, "oX": 3.31, "o2": 4.52}, "b3": {"o1": 1.81, "oX": 3.3, "o2": 4.47}, "sb": {"o1": 1.74, "oX": 3.3, "o2": 4.49}},
+  "Suíça|Bósnia": {"bt": {"o1": 1.77, "oX": 3.39, "o2": 4.73}, "b3": {"o1": 1.71, "oX": 3.34, "o2": 4.85}, "sb": {"o1": 1.77, "oX": 3.34, "o2": 4.78}},
+  "Canadá|Catar": {"bt": {"o1": 1.54, "oX": 3.78, "o2": 5.47}, "b3": {"o1": 1.54, "oX": 3.75, "o2": 5.56}, "sb": {"o1": 1.51, "oX": 3.84, "o2": 5.55}},
+  "México|Coreia do Sul": {"bt": {"o1": 2.0, "oX": 3.28, "o2": 3.66}, "b3": {"o1": 1.98, "oX": 3.21, "o2": 3.65}, "sb": {"o1": 2.0, "oX": 3.2, "o2": 3.66}},
+  "Turquia|Paraguai": {"bt": {"o1": 1.94, "oX": 3.26, "o2": 3.92}, "b3": {"o1": 1.97, "oX": 3.28, "o2": 4.09}, "sb": {"o1": 1.85, "oX": 3.29, "o2": 4.07}},
+  "Estados Unidos|Austrália": {"bt": {"o1": 1.85, "oX": 3.29, "o2": 4.26}, "b3": {"o1": 1.88, "oX": 3.29, "o2": 4.3}, "sb": {"o1": 1.85, "oX": 3.32, "o2": 4.12}},
+  "Escócia|Marrocos": {"bt": {"o1": 3.0, "oX": 3.12, "o2": 2.38}, "b3": {"o1": 3.05, "oX": 3.12, "o2": 2.29}, "sb": {"o1": 3.02, "oX": 3.15, "o2": 2.33}},
+  "Brasil|Haiti": {"bt": {"o1": 1.12, "oX": 8.53, "o2": 22.05}, "b3": {"o1": 1.04, "oX": 8.53, "o2": 21.99}, "sb": {"o1": 1.06, "oX": 8.47, "o2": 21.95}},
+  "Tunísia|Japão": {"bt": {"o1": 3.64, "oX": 3.19, "o2": 1.94}, "b3": {"o1": 3.6, "oX": 3.16, "o2": 2.03}, "sb": {"o1": 3.57, "oX": 3.15, "o2": 2.04}},
+  "Holanda|Suécia": {"bt": {"o1": 1.57, "oX": 3.65, "o2": 5.43}, "b3": {"o1": 1.6, "oX": 3.64, "o2": 5.44}, "sb": {"o1": 1.64, "oX": 3.55, "o2": 5.43}},
+  "Alemanha|Costa do Marfim": {"bt": {"o1": 1.56, "oX": 3.91, "o2": 6.01}, "b3": {"o1": 1.49, "oX": 3.94, "o2": 6.09}, "sb": {"o1": 1.55, "oX": 3.92, "o2": 5.94}},
+  "Equador|Curaçao": {"bt": {"o1": 1.28, "oX": 5.95, "o2": 10.05}, "b3": {"o1": 1.25, "oX": 5.98, "o2": 9.92}, "sb": {"o1": 1.29, "oX": 5.96, "o2": 9.93}},
+  "Espanha|Arábia Saudita": {"bt": {"o1": 1.22, "oX": 6.53, "o2": 12.03}, "b3": {"o1": 1.24, "oX": 6.5, "o2": 11.95}, "sb": {"o1": 1.2, "oX": 6.47, "o2": 11.98}},
+  "Bélgica|Irã": {"bt": {"o1": 1.46, "oX": 3.87, "o2": 6.92}, "b3": {"o1": 1.39, "oX": 3.86, "o2": 6.97}, "sb": {"o1": 1.48, "oX": 3.92, "o2": 6.94}},
+  "Uruguai|Cabo Verde": {"bt": {"o1": 1.37, "oX": 4.56, "o2": 8.5}, "b3": {"o1": 1.35, "oX": 4.56, "o2": 8.51}, "sb": {"o1": 1.37, "oX": 4.45, "o2": 8.53}},
+  "Nova Zelândia|Egito": {"bt": {"o1": 2.76, "oX": 3.14, "o2": 2.37}, "b3": {"o1": 2.74, "oX": 3.16, "o2": 2.54}, "sb": {"o1": 2.84, "oX": 3.16, "o2": 2.41}},
+  "Jordânia|Argélia": {"bt": {"o1": 3.36, "oX": 3.15, "o2": 2.14}, "b3": {"o1": 3.33, "oX": 3.11, "o2": 2.04}, "sb": {"o1": 3.45, "oX": 3.1, "o2": 2.05}},
+  "Argentina|Áustria": {"bt": {"o1": 1.57, "oX": 3.66, "o2": 5.49}, "b3": {"o1": 1.54, "oX": 3.73, "o2": 5.45}, "sb": {"o1": 1.52, "oX": 3.75, "o2": 5.51}},
+  "França|Iraque": {"bt": {"o1": 1.21, "oX": 6.96, "o2": 14.01}, "b3": {"o1": 1.2, "oX": 7.05, "o2": 13.99}, "sb": {"o1": 1.16, "oX": 6.95, "o2": 13.96}},
+  "Noruega|Senegal": {"bt": {"o1": 2.1, "oX": 3.26, "o2": 3.45}, "b3": {"o1": 2.15, "oX": 3.15, "o2": 3.47}, "sb": {"o1": 2.09, "oX": 3.23, "o2": 3.44}},
+  "Portugal|Uzbequistão": {"bt": {"o1": 1.1, "oX": 7.54, "o2": 16.0}, "b3": {"o1": 1.12, "oX": 7.55, "o2": 15.91}, "sb": {"o1": 1.2, "oX": 7.53, "o2": 16.06}},
+  "Inglaterra|Gana": {"bt": {"o1": 1.37, "oX": 4.45, "o2": 8.58}, "b3": {"o1": 1.38, "oX": 4.48, "o2": 8.51}, "sb": {"o1": 1.34, "oX": 4.44, "o2": 8.51}},
+  "Panamá|Croácia": {"bt": {"o1": 3.63, "oX": 3.19, "o2": 1.93}, "b3": {"o1": 3.62, "oX": 3.26, "o2": 2.09}, "sb": {"o1": 3.65, "oX": 3.26, "o2": 2.04}},
+  "Colômbia|RD Congo": {"bt": {"o1": 1.45, "oX": 3.97, "o2": 6.96}, "b3": {"o1": 1.5, "oX": 3.95, "o2": 7.09}, "sb": {"o1": 1.42, "oX": 3.98, "o2": 7.0}},
+  "Suíça|Canadá": {"bt": {"o1": 2.61, "oX": 3.17, "o2": 2.64}, "b3": {"o1": 2.6, "oX": 3.12, "o2": 2.69}, "sb": {"o1": 2.58, "oX": 3.15, "o2": 2.55}},
+  "Bósnia|Catar": {"bt": {"o1": 1.81, "oX": 3.25, "o2": 4.51}, "b3": {"o1": 1.75, "oX": 3.33, "o2": 4.45}, "sb": {"o1": 1.82, "oX": 3.3, "o2": 4.58}},
+  "Escócia|Brasil": {"bt": {"o1": 7.05, "oX": 4.49, "o2": 1.3}, "b3": {"o1": 6.93, "oX": 4.53, "o2": 1.32}, "sb": {"o1": 7.02, "oX": 4.5, "o2": 1.34}},
+  "Marrocos|Haiti": {"bt": {"o1": 1.21, "oX": 6.53, "o2": 12.05}, "b3": {"o1": 1.18, "oX": 6.43, "o2": 12.04}, "sb": {"o1": 1.19, "oX": 6.54, "o2": 11.99}},
+  "Rep. Tcheca|México": {"bt": {"o1": 2.43, "oX": 3.21, "o2": 2.85}, "b3": {"o1": 2.33, "oX": 3.2, "o2": 2.89}, "sb": {"o1": 2.36, "oX": 3.25, "o2": 2.99}},
+  "África do Sul|Coreia do Sul": {"bt": {"o1": 3.41, "oX": 3.14, "o2": 2.09}, "b3": {"o1": 3.45, "oX": 3.17, "o2": 2.12}, "sb": {"o1": 3.35, "oX": 3.11, "o2": 2.11}},
+  "Curaçao|Costa do Marfim": {"bt": {"o1": 7.5, "oX": 4.19, "o2": 1.39}, "b3": {"o1": 7.55, "oX": 4.27, "o2": 1.36}, "sb": {"o1": 7.54, "oX": 4.26, "o2": 1.44}},
+  "Equador|Alemanha": {"bt": {"o1": 4.84, "oX": 3.39, "o2": 1.71}, "b3": {"o1": 4.85, "oX": 3.33, "o2": 1.72}, "sb": {"o1": 4.84, "oX": 3.36, "o2": 1.75}},
+  "Japão|Suécia": {"bt": {"o1": 2.54, "oX": 3.14, "o2": 2.63}, "b3": {"o1": 2.48, "oX": 3.21, "o2": 2.67}, "sb": {"o1": 2.52, "oX": 3.2, "o2": 2.61}},
+  "Tunísia|Holanda": {"bt": {"o1": 6.47, "oX": 3.99, "o2": 1.49}, "b3": {"o1": 6.46, "oX": 4.04, "o2": 1.56}, "sb": {"o1": 6.54, "oX": 4.05, "o2": 1.41}},
+  "Turquia|Estados Unidos": {"bt": {"o1": 2.6, "oX": 3.12, "o2": 2.58}, "b3": {"o1": 2.66, "oX": 3.22, "o2": 2.63}, "sb": {"o1": 2.61, "oX": 3.14, "o2": 2.62}},
+  "Paraguai|Austrália": {"bt": {"o1": 2.71, "oX": 3.1, "o2": 2.52}, "b3": {"o1": 2.67, "oX": 3.12, "o2": 2.5}, "sb": {"o1": 2.66, "oX": 3.09, "o2": 2.61}},
+  "Noruega|França": {"bt": {"o1": 4.49, "oX": 3.47, "o2": 1.69}, "b3": {"o1": 4.52, "oX": 3.45, "o2": 1.75}, "sb": {"o1": 4.56, "oX": 3.45, "o2": 1.7}},
+  "Senegal|Iraque": {"bt": {"o1": 1.39, "oX": 4.44, "o2": 8.5}, "b3": {"o1": 1.4, "oX": 4.46, "o2": 8.47}, "sb": {"o1": 1.35, "oX": 4.5, "o2": 8.57}},
+  "Cabo Verde|Arábia Saudita": {"bt": {"o1": 2.16, "oX": 3.18, "o2": 3.26}, "b3": {"o1": 2.13, "oX": 3.21, "o2": 3.16}, "sb": {"o1": 2.16, "oX": 3.19, "o2": 3.25}},
+  "Uruguai|Espanha": {"bt": {"o1": 6.47, "oX": 4.06, "o2": 1.48}, "b3": {"o1": 6.49, "oX": 3.96, "o2": 1.46}, "sb": {"o1": 6.53, "oX": 4.03, "o2": 1.42}},
+  "Egito|Irã": {"bt": {"o1": 2.33, "oX": 3.19, "o2": 2.98}, "b3": {"o1": 2.28, "oX": 3.25, "o2": 2.91}, "sb": {"o1": 2.31, "oX": 3.22, "o2": 3.05}},
+  "Nova Zelândia|Bélgica": {"bt": {"o1": 6.51, "oX": 3.97, "o2": 1.51}, "b3": {"o1": 6.47, "oX": 4.02, "o2": 1.5}, "sb": {"o1": 6.51, "oX": 4.05, "o2": 1.48}},
+  "Panamá|Inglaterra": {"bt": {"o1": 8.97, "oX": 5.0, "o2": 1.27}, "b3": {"o1": 8.94, "oX": 5.03, "o2": 1.36}, "sb": {"o1": 9.0, "oX": 5.05, "o2": 1.37}},
+  "Croácia|Gana": {"bt": {"o1": 1.69, "oX": 3.51, "o2": 5.03}, "b3": {"o1": 1.76, "oX": 3.54, "o2": 5.03}, "sb": {"o1": 1.73, "oX": 3.54, "o2": 5.06}},
+  "Colômbia|Portugal": {"bt": {"o1": 4.85, "oX": 3.46, "o2": 1.74}, "b3": {"o1": 4.74, "oX": 3.35, "o2": 1.62}, "sb": {"o1": 4.85, "oX": 3.42, "o2": 1.64}},
+  "RD Congo|Uzbequistão": {"bt": {"o1": 2.07, "oX": 3.15, "o2": 3.41}, "b3": {"o1": 2.11, "oX": 3.14, "o2": 3.45}, "sb": {"o1": 2.07, "oX": 3.24, "o2": 3.36}},
+  "Argélia|Áustria": {"bt": {"o1": 2.26, "oX": 3.2, "o2": 3.07}, "b3": {"o1": 2.24, "oX": 3.25, "o2": 2.93}, "sb": {"o1": 2.31, "oX": 3.25, "o2": 3.0}},
+  "Jordânia|Argentina": {"bt": {"o1": 9.0, "oX": 5.45, "o2": 1.3}, "b3": {"o1": 9.05, "oX": 5.47, "o2": 1.3}, "sb": {"o1": 9.05, "oX": 5.46, "o2": 1.31}}
+};
+
+// ── ODDS ──
+function fallback(){return{bt:{o1:2.00,oX:3.20,o2:3.20},b3:{o1:2.00,oX:3.20,o2:3.20},sb:{o1:2.00,oX:3.20,o2:3.20}};}
+function getO(h,a){return ODDS_DB[h+'|'+a]||fallback();}
+function fz(v,d){return Math.max(1.01,+(v+(Math.random()-.5)*d*2).toFixed(2));}
+function pill(v,cls,best){return '<span class="op '+cls+(best?' ob':'')+'">'+v+'</span>';}
+function bestOf(a){return Math.min.apply(null,a);}
+function refreshOdds(){
+  Object.keys(ODDS_DB).forEach(function(k){
+    var o=ODDS_DB[k];
+    ['bt','b3','sb'].forEach(function(c){o[c].o1=fz(o[c].o1,.04);o[c].oX=fz(o[c].oX,.05);o[c].o2=fz(o[c].o2,.06);});
+  });
+  renderRows();
+  document.getElementById('sync-dot').style.background='#5a9970';
+  document.getElementById('sync-msg').textContent='Odds atualizadas';
+  document.getElementById('sync-time').textContent=new Date().toLocaleTimeString('pt-BR');
+}
+
+var DATA=[
+  {ph:'r1',lbl:'1ª RODADA — FASE DE GRUPOS',sub:'11 JUN — 14 JUN  ·  16 PARTIDAS',rows:[
+    {dt:'11 Jun, Qui',tm:'16h00',id:1, grp:'A',h:'México',          a:'África do Sul',  v:'Cidade do México'},
+    {dt:'11 Jun, Qui',tm:'23h00',id:2, grp:'A',h:'Coreia do Sul',   a:'Rep. Tcheca',    v:'Guadalajara'},
+    {dt:'12 Jun, Sex',tm:'16h00',id:3, grp:'B',h:'Canadá',          a:'Bósnia',         v:'Toronto'},
+    {dt:'12 Jun, Sex',tm:'22h00',id:4, grp:'D',h:'Estados Unidos',  a:'Paraguai',       v:'Los Angeles'},
+    {dt:'13 Jun, Sáb',tm:'01h00',id:6, grp:'D',h:'Austrália',       a:'Turquia',        v:'Vancouver'},
+    {dt:'13 Jun, Sáb',tm:'16h00',id:8, grp:'B',h:'Catar',           a:'Suíça',          v:'São Francisco'},
+    {dt:'13 Jun, Sáb',tm:'19h00',id:7, grp:'C',h:'Brasil',          a:'Marrocos',       v:'Nova York'},
+    {dt:'13 Jun, Sáb',tm:'22h00',id:5, grp:'C',h:'Haiti',           a:'Escócia',        v:'Boston'},
+    {dt:'14 Jun, Dom',tm:'14h00',id:10,grp:'E',h:'Alemanha',        a:'Curaçao',        v:'Houston'},
+    {dt:'14 Jun, Dom',tm:'17h00',id:11,grp:'F',h:'Holanda',         a:'Japão',          v:'Dallas'},
+    {dt:'14 Jun, Dom',tm:'20h00',id:9, grp:'E',h:'Costa do Marfim', a:'Equador',        v:'Filadélfia'},
+    {dt:'14 Jun, Dom',tm:'23h00',id:12,grp:'F',h:'Suécia',          a:'Tunísia',        v:'Monterrey'},
+    {dt:'15 Jun, Seg',tm:'13h00',id:14,grp:'H',h:'Espanha',         a:'Cabo Verde',     v:'Atlanta'},
+    {dt:'15 Jun, Seg',tm:'16h00',id:16,grp:'G',h:'Bélgica',         a:'Egito',          v:'Seattle'},
+    {dt:'15 Jun, Seg',tm:'19h00',id:13,grp:'H',h:'Arábia Saudita',  a:'Uruguai',        v:'Miami'},
+    {dt:'15 Jun, Seg',tm:'22h00',id:15,grp:'G',h:'Irã',             a:'Nova Zelândia',  v:'Los Angeles'},
+  ]},
+  {ph:'r2',lbl:'2ª RODADA — FASE DE GRUPOS',sub:'16 JUN — 23 JUN  ·  32 PARTIDAS',rows:[
+    {dt:'16 Jun, Ter',tm:'01h00',id:20,grp:'J',h:'Áustria',         a:'Jordânia',       v:'São Francisco'},
+    {dt:'16 Jun, Ter',tm:'16h00',id:17,grp:'I',h:'França',          a:'Senegal',        v:'Nova York'},
+    {dt:'16 Jun, Ter',tm:'19h00',id:18,grp:'I',h:'Iraque',          a:'Noruega',        v:'Boston'},
+    {dt:'16 Jun, Ter',tm:'22h00',id:19,grp:'J',h:'Argentina',       a:'Argélia',        v:'Kansas City'},
+    {dt:'17 Jun, Qua',tm:'14h00',id:23,grp:'K',h:'Portugal',        a:'RD Congo',       v:'Houston'},
+    {dt:'17 Jun, Qua',tm:'17h00',id:22,grp:'L',h:'Inglaterra',      a:'Croácia',        v:'Dallas'},
+    {dt:'17 Jun, Qua',tm:'20h00',id:21,grp:'L',h:'Gana',            a:'Panamá',         v:'Toronto'},
+    {dt:'17 Jun, Qua',tm:'23h00',id:24,grp:'K',h:'Uzbequistão',     a:'Colômbia',       v:'Cidade do México'},
+    {dt:'18 Jun, Qui',tm:'13h00',id:25,grp:'A',h:'Rep. Tcheca',     a:'África do Sul',  v:'Atlanta'},
+    {dt:'18 Jun, Qui',tm:'16h00',id:26,grp:'B',h:'Suíça',           a:'Bósnia',         v:'Los Angeles'},
+    {dt:'18 Jun, Qui',tm:'19h00',id:27,grp:'B',h:'Canadá',          a:'Catar',          v:'Vancouver'},
+    {dt:'18 Jun, Qui',tm:'22h00',id:28,grp:'A',h:'México',          a:'Coreia do Sul',  v:'Guadalajara'},
+    {dt:'19 Jun, Sex',tm:'01h00',id:31,grp:'D',h:'Turquia',         a:'Paraguai',       v:'São Francisco'},
+    {dt:'19 Jun, Sex',tm:'16h00',id:32,grp:'D',h:'Estados Unidos',  a:'Austrália',      v:'Seattle'},
+    {dt:'19 Jun, Sex',tm:'19h00',id:30,grp:'C',h:'Escócia',         a:'Marrocos',       v:'Boston'},
+    {dt:'19 Jun, Sex',tm:'22h00',id:29,grp:'C',h:'Brasil',          a:'Haiti',          v:'Filadélfia'},
+    {dt:'20 Jun, Sáb',tm:'01h00',id:36,grp:'F',h:'Tunísia',         a:'Japão',          v:'Monterrey'},
+    {dt:'20 Jun, Sáb',tm:'14h00',id:35,grp:'F',h:'Holanda',         a:'Suécia',         v:'Houston'},
+    {dt:'20 Jun, Sáb',tm:'17h00',id:33,grp:'E',h:'Alemanha',        a:'Costa do Marfim',v:'Toronto'},
+    {dt:'20 Jun, Sáb',tm:'21h00',id:34,grp:'E',h:'Equador',         a:'Curaçao',        v:'Kansas City'},
+    {dt:'21 Jun, Dom',tm:'13h00',id:38,grp:'H',h:'Espanha',         a:'Arábia Saudita', v:'Atlanta'},
+    {dt:'21 Jun, Dom',tm:'16h00',id:39,grp:'G',h:'Bélgica',         a:'Irã',            v:'Los Angeles'},
+    {dt:'21 Jun, Dom',tm:'19h00',id:37,grp:'H',h:'Uruguai',         a:'Cabo Verde',     v:'Miami'},
+    {dt:'21 Jun, Dom',tm:'22h00',id:40,grp:'G',h:'Nova Zelândia',   a:'Egito',          v:'Vancouver'},
+    {dt:'22 Jun, Seg',tm:'00h00',id:44,grp:'J',h:'Jordânia',        a:'Argélia',        v:'São Francisco'},
+    {dt:'22 Jun, Seg',tm:'14h00',id:43,grp:'J',h:'Argentina',       a:'Áustria',        v:'Dallas'},
+    {dt:'22 Jun, Seg',tm:'18h00',id:42,grp:'I',h:'França',          a:'Iraque',         v:'Filadélfia'},
+    {dt:'22 Jun, Seg',tm:'21h00',id:41,grp:'I',h:'Noruega',         a:'Senegal',        v:'Nova York'},
+    {dt:'23 Jun, Ter',tm:'14h00',id:47,grp:'K',h:'Portugal',        a:'Uzbequistão',    v:'Houston'},
+    {dt:'23 Jun, Ter',tm:'17h00',id:45,grp:'L',h:'Inglaterra',      a:'Gana',           v:'Boston'},
+    {dt:'23 Jun, Ter',tm:'20h00',id:46,grp:'L',h:'Panamá',          a:'Croácia',        v:'Toronto'},
+    {dt:'23 Jun, Ter',tm:'23h00',id:48,grp:'K',h:'Colômbia',        a:'RD Congo',       v:'Guadalajara'},
+  ]},
+  {ph:'r3',lbl:'3ª RODADA — FASE DE GRUPOS',sub:'24 JUN — 27 JUN  ·  24 PARTIDAS',rows:[
+    {dt:'24 Jun, Qua',tm:'16h00',id:51,grp:'B',h:'Suíça',           a:'Canadá',         v:'Vancouver'},
+    {dt:'24 Jun, Qua',tm:'16h00',id:52,grp:'B',h:'Bósnia',          a:'Catar',          v:'Seattle'},
+    {dt:'24 Jun, Qua',tm:'19h00',id:49,grp:'C',h:'Escócia',         a:'Brasil',         v:'Miami'},
+    {dt:'24 Jun, Qua',tm:'19h00',id:50,grp:'C',h:'Marrocos',        a:'Haiti',          v:'Atlanta'},
+    {dt:'24 Jun, Qua',tm:'22h00',id:53,grp:'A',h:'Rep. Tcheca',     a:'México',         v:'Cidade do México'},
+    {dt:'24 Jun, Qua',tm:'22h00',id:54,grp:'A',h:'África do Sul',   a:'Coreia do Sul',  v:'Monterrey'},
+    {dt:'25 Jun, Qui',tm:'17h00',id:55,grp:'E',h:'Curaçao',         a:'Costa do Marfim',v:'Filadélfia'},
+    {dt:'25 Jun, Qui',tm:'17h00',id:56,grp:'E',h:'Equador',         a:'Alemanha',       v:'Nova York'},
+    {dt:'25 Jun, Qui',tm:'20h00',id:57,grp:'F',h:'Japão',           a:'Suécia',         v:'Dallas'},
+    {dt:'25 Jun, Qui',tm:'20h00',id:58,grp:'F',h:'Tunísia',         a:'Holanda',        v:'Kansas City'},
+    {dt:'25 Jun, Qui',tm:'23h00',id:59,grp:'D',h:'Turquia',         a:'Estados Unidos', v:'Los Angeles'},
+    {dt:'25 Jun, Qui',tm:'23h00',id:60,grp:'D',h:'Paraguai',        a:'Austrália',      v:'São Francisco'},
+    {dt:'26 Jun, Sex',tm:'16h00',id:61,grp:'I',h:'Noruega',         a:'França',         v:'Boston'},
+    {dt:'26 Jun, Sex',tm:'16h00',id:62,grp:'I',h:'Senegal',         a:'Iraque',         v:'Toronto'},
+    {dt:'26 Jun, Sex',tm:'21h00',id:65,grp:'H',h:'Cabo Verde',      a:'Arábia Saudita', v:'Houston'},
+    {dt:'26 Jun, Sex',tm:'21h00',id:66,grp:'H',h:'Uruguai',         a:'Espanha',        v:'Guadalajara'},
+    {dt:'27 Jun, Sáb',tm:'00h00',id:63,grp:'G',h:'Egito',           a:'Irã',            v:'Seattle'},
+    {dt:'27 Jun, Sáb',tm:'00h00',id:64,grp:'G',h:'Nova Zelândia',   a:'Bélgica',        v:'Vancouver'},
+    {dt:'27 Jun, Sáb',tm:'18h00',id:67,grp:'L',h:'Panamá',          a:'Inglaterra',     v:'Nova York'},
+    {dt:'27 Jun, Sáb',tm:'18h00',id:68,grp:'L',h:'Croácia',         a:'Gana',           v:'Filadélfia'},
+    {dt:'27 Jun, Sáb',tm:'20h30',id:71,grp:'K',h:'Colômbia',        a:'Portugal',       v:'Miami'},
+    {dt:'27 Jun, Sáb',tm:'20h30',id:72,grp:'K',h:'RD Congo',        a:'Uzbequistão',    v:'Atlanta'},
+    {dt:'27 Jun, Sáb',tm:'23h00',id:69,grp:'J',h:'Argélia',         a:'Áustria',        v:'Kansas City'},
+    {dt:'27 Jun, Sáb',tm:'23h00',id:70,grp:'J',h:'Jordânia',        a:'Argentina',      v:'Dallas'},
+  ]},
+  {ph:'a',lbl:'32-AVOS DE FINAL',sub:'28 JUN — 3 JUL  ·  16 PARTIDAS',rows:[
+    {dt:'28 Jun',tm:'16h00',id:73,grp:'—',h:'2° Grupo A',a:'2° Grupo B',v:'Los Angeles'},
+    {dt:'29 Jun',tm:'14h00',id:76,grp:'—',h:'1° Grupo C',a:'2° Grupo F',v:'Houston'},
+    {dt:'29 Jun',tm:'17h30',id:74,grp:'—',h:'1° Grupo E',a:'3° Melhor A-F',v:'Boston'},
+    {dt:'29 Jun',tm:'22h00',id:75,grp:'—',h:'1° Grupo F',a:'2° Grupo C',v:'Monterrey'},
+    {dt:'30 Jun',tm:'14h00',id:78,grp:'—',h:'2° Grupo E',a:'2° Grupo I',v:'Dallas'},
+    {dt:'30 Jun',tm:'18h00',id:77,grp:'—',h:'1° Grupo I',a:'3° Melhor C-H',v:'Nova York'},
+    {dt:'30 Jun',tm:'22h00',id:79,grp:'—',h:'1° Grupo A',a:'3° Melhor C-I',v:'Cidade do México'},
+    {dt:'1 Jul',tm:'13h00',id:80,grp:'—',h:'1° Grupo L',a:'3° Melhor E-K',v:'Atlanta'},
+    {dt:'1 Jul',tm:'17h00',id:82,grp:'—',h:'1° Grupo G',a:'3° Melhor A-J',v:'Seattle'},
+    {dt:'1 Jul',tm:'21h00',id:81,grp:'—',h:'1° Grupo D',a:'3° Melhor B-J',v:'São Francisco'},
+    {dt:'2 Jul',tm:'00h00',id:85,grp:'—',h:'1° Grupo B',a:'3° Melhor E-J',v:'Vancouver'},
+    {dt:'2 Jul',tm:'16h00',id:84,grp:'—',h:'1° Grupo H',a:'2° Grupo J',v:'Los Angeles'},
+    {dt:'2 Jul',tm:'20h00',id:83,grp:'—',h:'2° Grupo K',a:'2° Grupo L',v:'Toronto'},
+    {dt:'3 Jul',tm:'15h00',id:88,grp:'—',h:'2° Grupo D',a:'2° Grupo G',v:'Dallas'},
+    {dt:'3 Jul',tm:'17h00',id:86,grp:'—',h:'1° Grupo J',a:'2° Grupo H',v:'Atlanta'},
+    {dt:'3 Jul',tm:'22h30',id:87,grp:'—',h:'1° Grupo K',a:'3° Melhor D-L',v:'Kansas City'}
+  ]},
+  {ph:'o',lbl:'OITAVAS DE FINAL',sub:'4 JUL — 7 JUL  ·  8 PARTIDAS',rows:[
+    {dt:'4 Jul',tm:'14h00',id:90,grp:'—',h:'Venc. J73',a:'Venc. J75',v:'Houston'},
+    {dt:'4 Jul',tm:'18h00',id:89,grp:'—',h:'Venc. J74',a:'Venc. J77',v:'Filadélfia'},
+    {dt:'5 Jul',tm:'17h00',id:91,grp:'—',h:'Venc. J76',a:'Venc. J78',v:'Nova Jersey'},
+    {dt:'5 Jul',tm:'21h00',id:92,grp:'—',h:'Venc. J79',a:'Venc. J80',v:'Cidade do México'},
+    {dt:'6 Jul',tm:'15h00',id:93,grp:'—',h:'Venc. J83',a:'Venc. J84',v:'Dallas'},
+    {dt:'6 Jul',tm:'20h00',id:94,grp:'—',h:'Venc. J81',a:'Venc. J82',v:'Seattle'},
+    {dt:'7 Jul',tm:'13h00',id:95,grp:'—',h:'Venc. J86',a:'Venc. J88',v:'Atlanta'},
+    {dt:'7 Jul',tm:'17h00',id:96,grp:'—',h:'Venc. J85',a:'Venc. J87',v:'Vancouver'}
+  ]},
+  {ph:'q',lbl:'QUARTAS DE FINAL',sub:'9 JUL — 11 JUL  ·  4 PARTIDAS',rows:[
+    {dt:'9 Jul', tm:'17h00',id:97, grp:'—',h:'Venc. J89',a:'Venc. J90',v:'Boston'},
+    {dt:'10 Jul',tm:'16h00',id:98, grp:'—',h:'Venc. J93',a:'Venc. J94',v:'Los Angeles'},
+    {dt:'11 Jul',tm:'18h00',id:99, grp:'—',h:'Venc. J91',a:'Venc. J92',v:'Miami'},
+    {dt:'11 Jul',tm:'21h00',id:100,grp:'—',h:'Venc. J95',a:'Venc. J96',v:'Kansas City'}
+  ]},
+  {ph:'s',lbl:'SEMIFINAIS',sub:'14–15 JUL  ·  2 PARTIDAS',rows:[
+    {dt:'14 Jul',tm:'16h00',id:101,grp:'—',h:'Venc. J97', a:'Venc. J98', v:'Dallas'},
+    {dt:'15 Jul',tm:'16h00',id:102,grp:'—',h:'Venc. J99', a:'Venc. J100',v:'Atlanta'}
+  ]},
+  {ph:'f',lbl:'DISPUTA 3° LUGAR & GRANDE FINAL',sub:'18–19 JUL  ·  2 PARTIDAS',rows:[
+    {dt:'18 Jul',tm:'18h00',id:103,grp:'—',h:'Perdedor SF1',a:'Perdedor SF2',v:'Miami'},
+    {dt:'19 Jul',tm:'16h00',id:104,grp:'—',h:'Finalista 1', a:'Finalista 2', v:'Nova Jersey'}
+  ]}
+];
+
+function renderRows(){
+  var html='';
+  for(var si=0;si<DATA.length;si++){
+    var sec=DATA[si];
+    html+='<tr class="sr" data-ph="'+sec.ph+'"><td colspan="15">'+sec.lbl+'<span class="ss">'+sec.sub+'</span></td></tr>';
+    for(var ri=0;ri<sec.rows.length;ri++){
+      var r=sec.rows[ri];
+      var o=getO(r.h,r.a);
+      var isBr=(r.h==='Brasil'||r.a==='Brasil'),isFin=(r.id===104);
+      var b1=bestOf([o.bt.o1,o.b3.o1,o.sb.o1]);
+      var bX=bestOf([o.bt.oX,o.b3.oX,o.sb.oX]);
+      var b2=bestOf([o.bt.o2,o.b3.o2,o.sb.o2]);
+      var bg=isBr?' style="background:rgba(0,60,28,.065)"':'';
+      var fs=isFin?' style="color:var(--bronze)"':'';
+      html+='<tr data-ph="'+sec.ph+'" data-gr="'+r.grp+'"'+bg+'>';
+      html+='<td class="cn">'+String(r.id).padStart(2,'0')+'</td>';
+      html+='<td class="cd"><div class="cd-d">'+r.dt+'</div></td>';
+      html+='<td class="cd"><div class="cd-t" style="font-size:10px;font-family:\'DM Mono\',monospace;color:var(--bronze2);letter-spacing:.05em">'+r.tm+'</div></td>';
+      html+='<td class="cg">'+(r.grp==='—'?'—':'GRP '+r.grp)+'</td>';
+      html+='<td class="cm"><div class="teams"><span class="tn h'+(isBr&&r.h==='Brasil'?' br':'')+'"'+fs+'>'+r.h+'</span><span class="vs-s">vs</span><span class="tn a'+(isBr&&r.a==='Brasil'?' br':'')+'"'+fs+'>'+r.a+'</span></div></td>';
+      html+='<td class="cv">'+r.v+'</td>';
+      html+='<td class="oc bl">'+pill(o.bt.o1,'oh',o.bt.o1===b1)+'</td><td class="oc">'+pill(o.bt.oX,'od',o.bt.oX===bX)+'</td><td class="oc">'+pill(o.bt.o2,'oa',o.bt.o2===b2)+'</td>';
+      html+='<td class="oc bl">'+pill(o.b3.o1,'oh',o.b3.o1===b1)+'</td><td class="oc">'+pill(o.b3.oX,'od',o.b3.oX===bX)+'</td><td class="oc">'+pill(o.b3.o2,'oa',o.b3.o2===b2)+'</td>';
+      html+='<td class="oc bl">'+pill(o.sb.o1,'oh',o.sb.o1===b1)+'</td><td class="oc">'+pill(o.sb.oX,'od',o.sb.oX===bX)+'</td><td class="oc">'+pill(o.sb.o2,'oa',o.sb.o2===b2)+'</td>';
+      html+='</tr>';
+    }
+  }
+  document.getElementById('tb').innerHTML=html;
+  applyF();
+}
+
+var APH='all',AGR=null;
+function fp(ph,btn){APH=ph;AGR=null;document.querySelectorAll('.fb').forEach(function(b){b.classList.remove('on');});btn.classList.add('on');applyF();}
+function fg(gr,btn){if(AGR===gr){AGR=null;btn.classList.remove('on');}else{AGR=gr;document.querySelectorAll('.fb').forEach(function(b){b.classList.remove('on');});btn.classList.add('on');}applyF();}
+function applyF(){
+  document.querySelectorAll('#tb tr').forEach(function(r){
+    var ph=r.dataset.ph,gr=r.dataset.gr,isSr=r.classList.contains('sr');
+    if(isSr){r.style.display=(APH==='all'||APH===ph)?'':'none';return;}
+    var show=true;
+    var isGrp=(APH==='r1'||APH==='r2'||APH==='r3');
+    if(APH!=='all'&&APH!==ph)show=false;
+    if(AGR&&gr!==AGR)show=false;
+    r.style.display=show?'':'none';
+  });
+}
+
+// ── TABS ──
+function showTab(id,btn){
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
+  document.querySelectorAll('.tab-btn,.ni').forEach(function(b){b.classList.remove('on');});
+  document.getElementById('view-'+id).classList.add('on');
+  document.getElementById('tab-'+id).classList.add('on');
+  document.getElementById('sb-'+id).classList.add('on');
+  if(id==='desemp'&&!window._dBuilt){window._dBuilt=true;buildDesemp();}
+}
+
+// ── DESEMPENHO DATA ──
+var PL=[
+  {nm:'Felps',  ac:52,er:12,tot:64,cor:'#c4975a',
+    rod:[{f:'1ª Rod',a:14,t:16},{f:'2ª Rod',a:14,t:16},{f:'3ª Rod',a:8,t:16},{f:'Oitavas',a:8,t:8},{f:'Quartas',a:4,t:4},{f:'Semis',a:2,t:2},{f:'3°/Final',a:2,t:2}],
+    tip:[{tp:'Equilibrado',a:13,t:17},{tp:'Lev. Favorito',a:20,t:21},{tp:'Amp. Favorito',a:19,t:26}]},
+  {nm:'DVD',    ac:49,er:15,tot:64,cor:'#7a9a5a',
+    rod:[{f:'1ª Rod',a:13,t:16},{f:'2ª Rod',a:11,t:16},{f:'3ª Rod',a:10,t:16},{f:'Oitavas',a:7,t:8},{f:'Quartas',a:4,t:4},{f:'Semis',a:2,t:2},{f:'3°/Final',a:2,t:2}],
+    tip:[{tp:'Equilibrado',a:12,t:17},{tp:'Lev. Favorito',a:17,t:21},{tp:'Amp. Favorito',a:20,t:26}]},
+  {nm:'Japa',   ac:49,er:15,tot:64,cor:'#5a8aaa',
+    rod:[{f:'1ª Rod',a:13,t:16},{f:'2ª Rod',a:11,t:16},{f:'3ª Rod',a:10,t:16},{f:'Oitavas',a:8,t:8},{f:'Quartas',a:3,t:4},{f:'Semis',a:2,t:2},{f:'3°/Final',a:2,t:2}],
+    tip:[{tp:'Equilibrado',a:12,t:17},{tp:'Lev. Favorito',a:17,t:21},{tp:'Amp. Favorito',a:20,t:26}]},
+  {nm:'Pina',   ac:47,er:17,tot:64,cor:'#5a7a9a',
+    rod:[{f:'1ª Rod',a:14,t:16},{f:'2ª Rod',a:11,t:16},{f:'3ª Rod',a:7,t:16},{f:'Oitavas',a:8,t:8},{f:'Quartas',a:3,t:4},{f:'Semis',a:2,t:2},{f:'3°/Final',a:2,t:2}],
+    tip:[{tp:'Equilibrado',a:12,t:17},{tp:'Lev. Favorito',a:15,t:21},{tp:'Amp. Favorito',a:20,t:26}]},
+  {nm:'Cain',   ac:46,er:18,tot:64,cor:'#9a7a5a',
+    rod:[{f:'1ª Rod',a:13,t:16},{f:'2ª Rod',a:11,t:16},{f:'3ª Rod',a:7,t:16},{f:'Oitavas',a:8,t:8},{f:'Quartas',a:3,t:4},{f:'Semis',a:2,t:2},{f:'3°/Final',a:2,t:2}],
+    tip:[{tp:'Equilibrado',a:10,t:17},{tp:'Lev. Favorito',a:16,t:21},{tp:'Amp. Favorito',a:20,t:26}]},
+  {nm:'Brunão', ac:46,er:18,tot:64,cor:'#9a5a7a',
+    rod:[{f:'1ª Rod',a:13,t:16},{f:'2ª Rod',a:12,t:16},{f:'3ª Rod',a:7,t:16},{f:'Oitavas',a:7,t:8},{f:'Quartas',a:3,t:4},{f:'Semis',a:2,t:2},{f:'3°/Final',a:2,t:2}],
+    tip:[{tp:'Equilibrado',a:12,t:17},{tp:'Lev. Favorito',a:14,t:21},{tp:'Amp. Favorito',a:20,t:26}]},
+  {nm:'Franz',  ac:41,er:23,tot:64,cor:'#5a9a7a',
+    rod:[{f:'1ª Rod',a:11,t:16},{f:'2ª Rod',a:8,t:16},{f:'3ª Rod',a:8,t:16},{f:'Oitavas',a:8,t:8},{f:'Quartas',a:3,t:4},{f:'Semis',a:2,t:2},{f:'3°/Final',a:1,t:2}],
+    tip:[{tp:'Equilibrado',a:9,t:17},{tp:'Lev. Favorito',a:15,t:21},{tp:'Amp. Favorito',a:17,t:26}]},
+];
+
+function pct(a,t){return t>0?Math.round(a/t*100):0;}
+
+function buildDesemp(){
+  PL.sort(function(a,b){return b.ac-a.ac;});
+  var avg=Math.round(PL.reduce(function(s,p){return s+pct(p.ac,p.tot);},0)/PL.length);
+  document.getElementById('kpi-best').textContent=PL[0].nm;
+  document.getElementById('kpi-avg').textContent=avg+'%';
+
+  // Hero cards
+  var heroEl=document.getElementById('dHero');
+  [{'l':'Melhor Apostador','v':PL[0].nm,'s':pct(PL[0].ac,PL[0].tot)+'% de acerto','c':PL[0].cor},
+   {'l':'Mais Acertos','v':PL[0].ac+'/64','s':PL[0].nm,'c':PL[0].cor},
+   {'l':'Média do Grupo','v':avg+'%','s':'sobre 64 jogos','c':'var(--bronze)'},
+   {'l':'Copa 2022','v':'Qatar','s':'64 jogos analisados','c':'var(--bronze2)'}
+  ].forEach(function(h){
+    var d=document.createElement('div');
+    d.className='dh';
+    d.style.borderTop='2px solid '+h.c;
+    d.innerHTML='<div class="dh-lbl" style="color:'+h.c+'">'+h.l+'</div>'+
+      '<div class="dh-val" style="color:'+h.c+'">'+h.v+'</div>'+
+      '<div class="dh-sub">'+h.s+'</div>';
+    heroEl.appendChild(d);
+  });
+
+  // Ranking
+  var rl=document.getElementById('rankList');
+  var medals=['🥇','🥈','🥉','4°','5°','6°','7°'];
+  PL.forEach(function(p,i){
+    var p_pct=pct(p.ac,p.tot);
+    var d=document.createElement('div');d.className='rk-row';
+    d.innerHTML=
+      '<div class="rk-pos" style="color:'+p.cor+'">'+medals[i]+'</div>'+
+      '<div class="rk-av" style="background:'+p.cor+'22;color:'+p.cor+'">'+p.nm.charAt(0)+'</div>'+
+      '<div class="rk-info"><div class="rk-name">'+p.nm+'</div><div class="rk-detail">'+p.ac+' acertos · '+p.er+' erros · '+p.tot+' jogos</div></div>'+
+      '<div class="rk-bw"><div class="rk-b" style="width:'+p_pct+'%;background:'+p.cor+'"></div></div>'+
+      '<div class="rk-pct" style="color:'+p.cor+'">'+p_pct+'%</div>';
+    rl.appendChild(d);
+  });
+
+  // Tipo chart — grouped bar with each player
+  var ctx=document.getElementById('tipoChart').getContext('2d');
+  var tipoLabels=['Equilibrado (17)','Lev. Favorito (21)','Amp. Favorito (26)'];
+  var datasets=PL.map(function(p){
+    return {
+      label:p.nm,
+      data:[pct(p.tip[0].a,p.tip[0].t),pct(p.tip[1].a,p.tip[1].t),pct(p.tip[2].a,p.tip[2].t)],
+      backgroundColor:p.cor+'99',
+      borderColor:p.cor,
+      borderWidth:1,
+      borderRadius:2
+    };
+  });
+  new Chart(ctx,{
+    type:'bar',
+    data:{labels:tipoLabels,datasets:datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'bottom',labels:{color:'rgba(196,151,90,.7)',font:{size:9,family:"'DM Mono',monospace"},boxWidth:10,padding:8}},
+        tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.raw+'%';}}}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{color:'rgba(200,187,168,.55)',font:{size:9,family:"'DM Mono',monospace"}}},
+        y:{grid:{color:'rgba(196,151,90,.07)'},ticks:{color:'rgba(200,187,168,.55)',font:{size:9},callback:function(v){return v+'%';}},min:0,max:100}
+      }
+    }
+  });
+
+  // Player cards with donut
+  var pg=document.getElementById('dPlayers');
+  PL.forEach(function(p,idx){
+    var p_pct=pct(p.ac,p.tot);
+    var rodHTML=p.rod.map(function(r){
+      var rp=pct(r.a,r.t);
+      return '<div class="ph-row"><span class="ph-lbl">'+r.f+'</span><div class="ph-bw"><div class="ph-b" style="width:'+rp+'%;background:'+p.cor+'"></div></div><span class="ph-pct">'+rp+'%</span></div>';
+    }).join('');
+    var tipHTML=p.tip.map(function(t){
+      var tp=pct(t.a,t.t);
+      return '<div class="tipo-row"><span class="tipo-nm">'+t.tp+'</span><div class="tipo-bw"><div class="tipo-b" style="width:'+tp+'%;background:'+p.cor+'88"></div></div><span class="tipo-pct" style="color:'+p.cor+'">'+tp+'%</span></div>';
+    }).join('');
+    var d=document.createElement('div');d.className='pc';
+    d.innerHTML=
+      '<div class="pc-top">'+
+        '<div class="pc-av" style="background:'+p.cor+'22;color:'+p.cor+'">'+p.nm.charAt(0)+'</div>'+
+        '<div><div class="pc-nm">'+p.nm+'</div><div class="pc-pct" style="color:'+p.cor+'">'+p_pct+'% de acerto geral</div></div>'+
+      '</div>'+
+      '<div class="pc-body">'+
+        '<div>'+
+          '<div class="pc-donut">'+
+            '<canvas id="dn'+idx+'" width="120" height="120"></canvas>'+
+            '<div class="pc-donut-lbl">'+
+              '<div class="pc-donut-pct" style="color:'+p.cor+'">'+p_pct+'%</div>'+
+              '<div class="pc-donut-sub">acertos</div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="pc-nums" style="margin-top:10px">'+
+            '<div class="pc-num"><div class="pc-num-v" style="color:#7dd19a">'+p.ac+'</div><div class="pc-num-l">ACERTOS</div></div>'+
+            '<div class="pc-num"><div class="pc-num-v" style="color:#c48080">'+p.er+'</div><div class="pc-num-l">ERROS</div></div>'+
+          '</div>'+
+        '</div>'+
+        '<div>'+
+          '<div class="pc-phases" style="margin-bottom:10px">'+rodHTML+'</div>'+
+          '<div class="tipo-section"><div class="tipo-lbl">Por tipo de jogo</div>'+tipHTML+'</div>'+
+        '</div>'+
+      '</div>';
+    pg.appendChild(d);
+
+    // Draw donut after DOM ready
+    (function(id,cor,ac,er){
+      setTimeout(function(){
+        var cv=document.getElementById('dn'+id);
+        if(!cv)return;
+        new Chart(cv.getContext('2d'),{
+          type:'doughnut',
+          data:{datasets:[{
+            data:[ac,er],
+            backgroundColor:[cor,cor+'1a'],
+            borderColor:[cor,'transparent'],
+            borderWidth:1
+          }]},
+          options:{
+            cutout:'72%',responsive:false,
+            plugins:{legend:{display:false},tooltip:{enabled:false}},
+            animation:{duration:600}
+          }
+        });
+      },80);
+    })(idx,p.cor,p.ac,p.er);
+  });
+}
+
+// ── TEAM ──
+var TEAM=[
+  {n:'Caio',   r:'CEO',  d:'Chief Executive Officer',   c:'#c4975a'},
+  {n:'Leonardo',r:'CFO', d:'Chief Financial Officer',   c:'#a37a40'},
+  {n:'Davi',   r:'COO',  d:'Chief Operating Officer',   c:'#b38840'},
+  {n:'Franz',  r:'Bet Head',d:'Head de Apostas',         c:'#7a9a5a'},
+  {n:'Felps',  r:'P&I',  d:'Produtos & Inovação',        c:'#5a7a9a'},
+  {n:'Henrique',r:'Head Desempenho',d:'Head de Desempenho',c:'#9a5a7a'},
+  {n:'Bruno',  r:'CMO',  d:'Chief Marketing Officer',   c:'#6a5a9a'},
+];
+var tg=document.getElementById('teamGrid');
+TEAM.forEach(function(m){
+  var d=document.createElement('div');d.className='mc';
+  d.style.borderTop='2px solid '+m.c;
+  d.innerHTML='<div class="mc-av" style="background:'+m.c+'1a;border:1px solid '+m.c+'33;color:'+m.c+'">'+m.n.charAt(0)+'</div>'+
+    '<div class="mc-role" style="color:'+m.c+'">'+m.r+'</div>'+
+    '<div class="mc-name">'+m.n+'</div>'+
+    '<div class="mc-dept">'+m.d+'</div>';
+  tg.appendChild(d);
+});
+
+// ── CLOCK ──
+function clock(){
+  var n=new Date();
+  document.getElementById('clk').textContent=n.toLocaleString('pt-BR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).toUpperCase().replace('.','');
+}
+
+// ── INIT ──
+renderRows();
+clock();
+document.getElementById('sync-time').textContent=new Date().toLocaleTimeString('pt-BR');
+setInterval(clock,30000);
+setInterval(refreshOdds,300000);
+</script>
+</body>
+</html>
